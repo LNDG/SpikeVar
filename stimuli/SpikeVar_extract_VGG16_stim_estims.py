@@ -3,7 +3,7 @@
 """
 Created on Tue Apr 12 09:40:41 2022
 
-@author: waschke
+@author: waschke & kamp
 
 Here we Calculate visual complexity by calculating the mean value of layer 4 output in VGG16
 key part in line 54-55
@@ -60,49 +60,28 @@ cat_names = [
         ]
 
 cat_list = []
-final_complexity_list = np.empty([590,1])
-fifth_complexity_list = np.empty([590,1])
-fourth_complexity_list = np.empty([590,1])
-third_complexity_list = np.empty([590,1])
-second_complexity_list = np.empty([590,1])
-first_complexity_list = np.empty([590,1])
-final_complexity_sd_list = np.empty([590,1])
-fifth_complexity_sd_list = np.empty([590,1])
-fourth_complexity_sd_list = np.empty([590,1])
-third_complexity_sd_list = np.empty([590,1])
-second_complexity_sd_list = np.empty([590,1])
-first_complexity_sd_list = np.empty([590,1])
 stim_ID_list = []
 version_list = []
 img_list = []
 
-final_nz_complexity_list = np.empty([590,1])
-fifth_nz_complexity_list = np.empty([590,1])
-fourth_nz_complexity_list = np.empty([590,1])
-third_nz_complexity_list = np.empty([590,1])
-second_nz_complexity_list = np.empty([590,1])
-first_nz_complexity_list = np.empty([590,1])
+layers = ['first', 'second', 'third', 'fourth', 'fifth', 'final']
+lw_complexity_mean = {layer: np.empty([590,1]) for layer in layers}
+lw_complexity_sd = {layer: np.empty([590,1]) for layer in layers}
 
-final_nzsd_complexity_list = np.empty([590,1])
-fifth_nzsd_complexity_list = np.empty([590,1])
-fourth_nzsd_complexity_list = np.empty([590,1])
-third_nzsd_complexity_list = np.empty([590,1])
-second_nzsd_complexity_list = np.empty([590,1])
-first_nzsd_complexity_list = np.empty([590,1])
+# non-zero
+lw_nz_complexity_mean = {layer: np.empty([590,1]) for layer in layers} # final complexity_list
+lw_nz_complexity_sd = {layer: np.empty([590,1]) for layer in layers}
 
-all_first_layer_activations = np.empty([0,112,112,64])
-all_second_layer_activations = np.empty([0,56,56,128])
-all_third_layer_activations = np.empty([0,28,28,256])
-all_fourth_layer_activations = np.empty([0,14,14,512])
-all_fifth_layer_activations = np.empty([0,7,7,512])
-all_final_layer_activations = np.empty([0, 4096])
-all_vers = np.empty([0])
+lw_feature_count = [64, 128, 256, 512, 512, 4096]
+layer_sizes = [112, 56, 28, 14, 7, 1]
 
-first_lw_complexity_array = np.empty([590,64])
-second_lw_complexity_array = np.empty([590,128])
-third_lw_complexity_array = np.empty([590,256])
-fourth_lw_complexity_array = np.empty([590,512])
-fifth_lw_complexity_array = np.empty([590,512])
+layer_activations = {layer[i]: np.empty([0, layer_sizes[i], layer_sizes[i], lw_feature_count[i]] 
+                for i in range(5))}
+layer_activations.update(final = np.empty([0, 4096]))
+layer_activations.update(all_vers=np.empty([0]))
+
+lw_complexity = {layer[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+
 
 first_lw_wz_complexity_array = np.empty([590,64])
 second_lw_wz_complexity_array = np.empty([590,128])
