@@ -19,6 +19,7 @@ import cv2
 import glob
 import os
 import pandas as pd
+import utils
 
 # build model
 model = tf.keras.applications.VGG16(
@@ -50,197 +51,87 @@ cat_dict = [
     {"houses": 1, "landscapes": 2, "mobility": 3, "phones": 4, "smallAnimal": 5},
     {"fruit":6, "kids": 7, "military": 8, "space": 9, "zzanimal": 10},
     {"1cars":11, "2food": 12,"3people":13, "4spatial": 14, "5animals": 15}
-        ]
-
+    ]
 
 cat_names = [
-         ["houses", "landscapes", "mobility", "phones", "smallAnimal"],
-         ["fruit", "kids", "military", "space", "zzanimal"],
+        ["houses", "landscapes", "mobility", "phones", "smallAnimal"],
+        ["fruit", "kids", "military", "space", "zzanimal"],
         ["1cars", "2food","3people", "4spatial", "5animals"]
         ]
 
-cat_list = []
-stim_ID_list = []
-version_list = []
-img_list = []
+img_dict = utils.get_image_paths(image_dir_base, versions, cat_names)
+stimulus_codes = utils.get_stimulus_codes(img_dict)
+num_images = len(stimulus_codes) # is this 590?
 
-layers = ['first', 'second', 'third', 'fourth', 'fifth', 'final']
-lw_complexity_mean = {layer: np.empty([590,1]) for layer in layers}
-lw_complexity_sd = {layer: np.empty([590,1]) for layer in layers}
-
-# non-zero
-lw_nz_complexity_mean = {layer: np.empty([590,1]) for layer in layers} # final complexity_list
-lw_nz_complexity_sd = {layer: np.empty([590,1]) for layer in layers}
-
+layer_names = ['first', 'second', 'third', 'fourth', 'fifth', 'final']
+layer_idx = {'first': 3, 'second': 6, 'third': 10, 'fourth':14, 'fifth': 18, 'final': 21}
 lw_feature_count = [64, 128, 256, 512, 512, 4096]
 layer_sizes = [112, 56, 28, 14, 7, 1]
 
-layer_activations = {layer[i]: np.empty([0, layer_sizes[i], layer_sizes[i], lw_feature_count[i]] 
+# set up arrays for feature maps 
+layer_activations = {layer_names[i]: np.empty([0, layer_sizes[i], layer_sizes[i], lw_feature_count[i]] 
                 for i in range(5))}
 layer_activations.update(final = np.empty([0, 4096]))
-layer_activations.update(all_vers=np.empty([0]))
+layer_activations.update(all_vers = np.empty([0]))
 
-lw_complexity = {layer[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+# set up arrays for complexity estimates
+lw_complexity_mean = {layer: np.empty([590,1]) for layer in layer_names}
+lw_complexity_sd = {layer: np.empty([590,1]) for layer in layer_names}
 
+# set up arrays for non-zero complexity
+lw_nz_complexity_mean = {layer: np.empty([590,1]) for layer in layer_names} # final complexity
+lw_nz_complexity_sd = {layer: np.empty([590,1]) for layer in layer_names}
 
-first_lw_wz_complexity_array = np.empty([590,64])
-second_lw_wz_complexity_array = np.empty([590,128])
-third_lw_wz_complexity_array = np.empty([590,256])
-fourth_lw_wz_complexity_array = np.empty([590,512])
-fifth_lw_wz_complexity_array = np.empty([590,512])
+# set up array for all features
+lw_feature_complexity_mean = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+lw_feature_complexity_sd = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+lw_feature_complexity_sum = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
 
-first_lw_wz_sd_array = np.empty([590,64])
-second_lw_wz_sd_array = np.empty([590,128])
-third_lw_wz_sd_array = np.empty([590,256])
-fourth_lw_wz_sd_array = np.empty([590,512])
-fifth_lw_wz_sd_array = np.empty([590,512])
+# non-zero
+lw_feature_nz_complexity_mean = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+lw_feature_nz_complexity_sd = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
 
-first_lw_sd_array = np.empty([590,64])
-second_lw_sd_array = np.empty([590,128])
-third_lw_sd_array = np.empty([590,256])
-fourth_lw_sd_array = np.empty([590,512])
-fifth_lw_sd_array = np.empty([590,512])
-
-first_lw_sum_array = np.empty([590,64])
-second_lw_sum_array = np.empty([590,128])
-third_lw_sum_array = np.empty([590,256])
-fourth_lw_sum_array = np.empty([590,512])
-fifth_lw_sum_array = np.empty([590,512])
-
-
-# get number of files for each task variant and picture category
-for ver in range(len(versions)):
-    dd = image_dir_base + versions[ver]
-    subcat_list = [ f.path for f in os.scandir(dd) if f.is_dir() ]
-    cur_catnames = cat_names[ver]
-    for scat in range(len(cat_names[ver])):
-        #img_list = os.listdir(subcat_list[scat])    
-        # get index of image category which is not identical with the running index
-        #temp_p_dis = os.path.split(subcat_list[scat])
-        catname = cur_catnames[scat]
-        
-        
-        img_list_path = sorted(glob.glob(dd+"/"+catname + "/*.jpg", recursive = False))
-        print("Working on Version {}".format(ver+1))
-        img_ls = []
-        for img in range(len(img_list_path)):
-            img_ls.append(os.path.basename(img_list_path[img]))
+# get the layerwise feature maps for each iamge
+for ver in versions:
+    for cat in range(len(cat_names[ver])):
+        img_ls = img_dict[ver][cat]
         batch_size = len(img_ls)
         imgs_batch_tensor = np.empty((batch_size, 224, 224, 3))        
         for i in range(batch_size):
-            img_tensor = Image.open(img_list_path[i])  
-            img_tensor_resize = img_tensor.resize((224,224))
-            img_tensor_rgb = img_tensor_resize.convert('RGB')
+            img_tensor_rgb = utils.load_image_tensor(img_ls[i])
             # check size compatibility
-            try:
-                imgs_batch_tensor[i, :, :, :] = img_tensor_rgb
-            except:
-                print(f"img_tensor.size:{img_tensor.size}")
-                raise NotImplementedError
-                
-            # determine and set up stimulus code
-            cat_code = cat_dict[ver][catname]
-            stim_code =  1000+(cat_code*100)+i+1
-            stim_ID_list.append(stim_code)
-            cat_list.append(catname)    
-            version_list.append(ver+1)
-            img_list.append(i+1)
-            all_vers = np.append(all_vers, np.array(ver+1))
-            
+            assert img_tensor_rgb.shape == (224, 224, 3), f"img_tensor.size:{img_tensor_rgb.size}"
+            imgs_batch_tensor[i, :, :, :] = img_tensor_rgb
+        
+        # predict activation maps for all images in this batch
         activations = activation_model.predict(imgs_batch_tensor)
-        final_layer_activation = activations[21]
-        fifth_layer_activation = activations[18]
-        fourth_layer_activation = activations[14]  # key part: get layer 4 feature maps, and its mean value can represent complexity well
-        third_layer_activation = activations[10]
-        second_layer_activation = activations[6]
-        first_layer_activation = activations[3]
         
-        # append stuff
-        all_first_layer_activations  =np.append(all_first_layer_activations, (first_layer_activation), axis = 0)
-        all_second_layer_activations  =np.append(all_second_layer_activations, (second_layer_activation), axis = 0)
-        all_third_layer_activations  =np.append(all_third_layer_activations, (third_layer_activation), axis = 0)
-        all_fourth_layer_activations  =np.append(all_fourth_layer_activations, (fourth_layer_activation), axis = 0)
-        all_fifth_layer_activations  =np.append(all_fifth_layer_activations, (fifth_layer_activation), axis = 0)
-        all_final_layer_activations  =np.append(all_final_layer_activations, (final_layer_activation), axis = 0)
-        
-      
-        print("Done with estimates for version {}, category {}".format(ver+1,scat+1))
-        
-for i in range(all_second_layer_activations.shape[0]):
-    final_complexity_list[i] = ([np.mean(all_final_layer_activations[i, :]) ]) 
-    fifth_complexity_list[i] =([np.mean(all_fifth_layer_activations[i, :, :, :]) ]) 
-    fourth_complexity_list[i] = ([np.mean(all_fourth_layer_activations[i, :, :, :]) ]) 
-    third_complexity_list[i]=([np.mean(all_third_layer_activations[i, :, :, :]) ] )
-    second_complexity_list[i]=([np.mean(all_second_layer_activations[i, :, :, :])]) 
-    first_complexity_list[i]=([np.mean(all_first_layer_activations[i, :, :, :])]) 
-        
-    # due to sparsity, why not get the mean only across non-zerop entries?
-    final_nz_complexity_list[i] = ( [np.mean(np.nonzero(all_final_layer_activations[i, :].flatten()))])
-    fifth_nz_complexity_list[i] = ([np.mean(np.nonzero(all_fifth_layer_activations[i, :, :, :].flatten()))]) 
-    fourth_nz_complexity_list[i] = ([np.mean(np.nonzero(all_fourth_layer_activations[i, :, :, :].flatten()))]) 
-    third_nz_complexity_list[i] = ( [np.mean(np.nonzero(all_third_layer_activations[i, :, :, :].flatten()))] )
-    second_nz_complexity_list[i] = ([np.mean(np.nonzero(all_second_layer_activations[i, :, :, :].flatten()))] )
-    first_nz_complexity_list[i] = ([np.mean(np.nonzero(all_first_layer_activations[i, :, :, :].flatten()))] )
-    # can we get the sd on each layer?
-    final_complexity_sd_list[i] = ([np.std(all_final_layer_activations[i, :])] )
-    fifth_complexity_sd_list[i] = ( [np.std(all_fifth_layer_activations[i, :, :, :])] )
-    fourth_complexity_sd_list[i] = ([np.std(all_fourth_layer_activations[i, :, :, :])] )
-    third_complexity_sd_list[i] = ( [np.std(all_third_layer_activations[i, :, :, :])] )
-    second_complexity_sd_list[i] = ([np.std(all_second_layer_activations[i, :, :, :])])
-    first_complexity_sd_list[i] = ([np.std(all_first_layer_activations[i, :, :, :])])
-        
-            # sd for nonzero elements?
-    final_nzsd_complexity_list[i] = ( [np.std(np.nonzero(all_final_layer_activations[i, :].flatten()))] )
-    fifth_nzsd_complexity_list[i] = ( [np.std(np.nonzero(all_fifth_layer_activations[i, :, :, :].flatten())) ] )
-    fourth_nzsd_complexity_list[i] = ( [np.std(np.nonzero(all_fourth_layer_activations[i, :, :, :].flatten())) ] )
-    third_nzsd_complexity_list[i] = ([np.std(np.nonzero(all_third_layer_activations[i, :, :, :].flatten())) ] )
-    second_nzsd_complexity_list[i] = ([np.std(np.nonzero(all_second_layer_activations[i, :, :, :].flatten())) ] )
-    first_nzsd_complexity_list[i] = ([np.std(np.nonzero(all_first_layer_activations[i, :, :, :].flatten())) ] )
-        
-            # one more thing to try: reduce feature space by running a PCA on the layer-specific output
-            # problem: many zero entries and hence hard to normalize
+        # key part: get and store feature maps of layers of interest 
+        for layer in layer_names:
+            np.append(layer_activations[layer], (activations[layer_idx[layer]]), axis=0)
+              
+        print(f"Done with estimates for version {ver}, category {cat + 1}")
 
-            # before that: average (non-zero) layer outputs within features but across image dimensions
-            
-            
-    for nf1 in range(first_layer_activation.shape[-1]):
-      first_lw_complexity_array[i, nf1]  = np.nanmean(np.nonzero(all_first_layer_activations[i, :, :, nf1].flatten())) 
-      first_lw_wz_complexity_array[i, nf1]  = np.nanmean((all_first_layer_activations[i, :, :, nf1].flatten())) 
-      # also get the sd for each feature as a proxy of sparsity
-      first_lw_wz_sd_array[i, nf1]  = np.std((all_first_layer_activations[i, :, :, nf1].flatten())) 
-      first_lw_sd_array[i, nf1]  = np.std(np.nonzero(all_first_layer_activations[i, :, :, nf1].flatten())) 
-      # one more thing: get the usm of non-zero elements
-      first_lw_sum_array[i, nf1]  = np.sum(np.nonzero(all_first_layer_activations[i, :, :, nf1].flatten())) 
-    for nf2 in range(second_layer_activation.shape[-1]):
-        second_lw_complexity_array[i, nf2]  = np.nanmean(np.nonzero(all_second_layer_activations[i, :, :, nf2].flatten())) 
-        second_lw_wz_complexity_array[i, nf2]  = np.nanmean((all_second_layer_activations[i, :, :, nf2].flatten())) 
-        # also get the sd for each feature as a proxy of sparsity
-        second_lw_wz_sd_array[i, nf2]  = np.std((all_second_layer_activations[i, :, :, nf2].flatten())) 
-        second_lw_sd_array[i, nf2]  = np.std(np.nonzero(all_second_layer_activations[i, :, :, nf2].flatten())) 
-        # one more thing: get the usm of non-zero elements
-        second_lw_sum_array[i, nf2]  = np.sum(np.nonzero(all_second_layer_activations[i, :, :, nf2].flatten())) 
+for i in range(num_images):
+    for j, layer in enumerate(layer_names):
+        img_lw_activations = layer_activations[layer][i,...]
+        # get mean/sd of each layer
+        lw_complexity_mean[layer][i] = np.mean(img_lw_activations)         
+        lw_complexity_sd[layer][i] = np.std(img_lw_activations)
+        # due to sparsity, get the mean only across non-zerop entries
+        lw_nz_complexity_mean[layer][i] = np.mean(img_lw_activations[np.nonzero(img_lw_activations)])
+        lw_nz_complexity_sd[layer][i] = np.std(img_lw_activations[np.nonzero(img_lw_activations)])
         
-    for nf3 in range(third_layer_activation.shape[-1]):
-        third_lw_complexity_array[i, nf3]  = np.nanmean(np.nonzero(all_third_layer_activations[i, :, :, nf3].flatten()))  
-        third_lw_wz_complexity_array[i, nf3]  = np.nanmean((all_third_layer_activations[i, :, :, nf3].flatten()))  
-        third_lw_wz_sd_array[i, nf3]  = np.std((all_third_layer_activations[i, :, :, nf3].flatten())) 
-        third_lw_sd_array[i, nf3]  = np.std(np.nonzero(all_third_layer_activations[i, :, :, nf3].flatten()))  
-        third_lw_sum_array[i, nf3]  = np.sum(np.nonzero(all_third_layer_activations[i, :, :, nf3].flatten()))  
-    for nf4 in range(fourth_layer_activation.shape[-1]):
-        fourth_lw_complexity_array[i, nf4]  = np.nanmean(np.nonzero(all_fourth_layer_activations[i, :, :, nf4].flatten()))  
-        fourth_lw_wz_complexity_array[i, nf4]  = np.nanmean((all_fourth_layer_activations[i, :, :, nf4].flatten()))  
-        fourth_lw_wz_sd_array[i, nf4]  = np.std((all_fourth_layer_activations[i, :, :, nf4].flatten()))  
-        fourth_lw_sd_array[i, nf4]  = np.std(np.nonzero(all_fourth_layer_activations[i, :, :, nf4].flatten()))  
-        fourth_lw_sum_array[i, nf4]  = np.sum(np.nonzero(all_fourth_layer_activations[i, :, :, nf4].flatten()))  
-    for nf5 in range(fifth_layer_activation.shape[-1]):
-        fifth_lw_complexity_array[i, nf5]  = np.nanmean(np.nonzero(all_fifth_layer_activations[i, :, :, nf5].flatten()))  
-        fifth_lw_wz_complexity_array[i, nf5]  = np.nanmean((all_fifth_layer_activations[i, :, :, nf5].flatten()))  
-        fifth_lw_wz_sd_array[i, nf5]  = np.std((all_fifth_layer_activations[i, :, :, nf5].flatten()))  
-        fifth_lw_sd_array[i, nf5]  = np.std(np.nonzero(all_fifth_layer_activations[i, :, :, nf5].flatten()))    
-        fifth_lw_sum_array[i, nf5]  = np.sum(np.nonzero(all_fifth_layer_activations[i, :, :, nf5].flatten()))  
-
-       
-
+        for n_feature in range(lw_feature_count[j]):
+            feature_activations = img_lw_activations[i,:,:, n_feature]
+            # get mean/sd/sum of each feature in each layer
+            lw_feature_complexity_mean[layer][i, n_feature] = np.nanmean(feature_activations)
+            lw_feature_complexity_sd[layer][i, n_feature] = np.std(feature_activations)
+            lw_feature_complexity_sum[layer][i, n_feature] = np.sum(feature_activations)
+            # same for non-zero entries
+            lw_feature_nz_complexity_mean[layer][i, n_feature] = np.nanmean(feature_activations[np.nonzero(feature_activations)])
+            lw_feature_nz_complexity_sd[layer][i, n_feature] = np.std(feature_activations[np.nonzero(feature_activations)])
+             
 stim_Dat = np.column_stack((second_complexity_list, third_complexity_list,fourth_complexity_list, fifth_complexity_list,
                             final_complexity_list, 
                             second_nz_complexity_list, third_nz_complexity_list,fourth_nz_complexity_list, fifth_nz_complexity_list,
