@@ -1,39 +1,32 @@
 import os 
 import pandas as pd
+from PIL import Image
 
-def get_image_paths(root, versions, cat_names):
+def get_image_paths(root, versions_dict):
     """
     param root: base directory of the stimuli files
     param versions: list of all the versions
     param cat_names: list of categories separated for each version
     """ 
-    image_dict = {versions[i]: {cat_names[i][j]: [os.path.join(root, versions[i], cat_names[i][j], image) 
-        for image in os.listdir(os.path.join(root, versions[i], cat_names[i][j])) if image.endswith('.jpg')]
-        for j in range(5)} 
-        for i in range(3)}
+    img_dict = {version: {versions_dict[category]: sorted([os.path.join(root, version, category, image) 
+        for image in os.listdir(os.path.join(root, version, category)) if image.endswith('.jpg')])}
+        for version in versions_dict.keys() 
+        for category in versions_dict[version]}
     
-    image_list = [image_path for version in img_dict.keys() 
+    img_list = [image_path for version in img_dict.keys() 
                      for category in img_dict[version].keys() 
                      for image_path in img_dict[version][category]]
     
-    return image_dict, image_list
+    return img_dict, img_list
 
-def get_stimulus_codes(i, category, version):
-
-
-    
-    for version in image_dict.keys():
-        for category in image_dict[version]:
-            cat_code = cat_dict[version][category]
-            for i, image in enumerate(image_dict[version][category]):
-                image_number = i + 1 
-                stim_code =  1000 + (cat_code * 100) + image_number
-                code_df.append({'stimulus_code': stim_code, 
-                    'category': category, 
-                    'version': version, 
-                    'image_number': image_number, 
-                    'image_path': image})
-    return pd.DataFrame(code_df)
+def get_stimulus_code(image_number, category_code, category, version, image_path):
+    stim_code =  1000 + (category_code * 100) + image_number
+    stimulus_dict = {'stimulus_code': stim_code, 
+        'category': category, 
+        'version': version, 
+        'image_number': image_number, 
+        'image_path': image_path}
+    return stimulus_dict
 
 def load_image_tensor(image_path):
     img_tensor = Image.open(image_path)  
