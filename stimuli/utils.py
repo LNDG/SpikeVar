@@ -7,21 +7,21 @@ def get_image_paths(root, versions, cat_names):
     param versions: list of all the versions
     param cat_names: list of categories separated for each version
     """ 
-    image_dict = {versions[i]: {cat_names[i][j]: sorted([os.path.join(root, versions[i], cat_names[i][j], image) 
-        for image in os.listdir(os.path.join(root, versions[i], cat_names[i][j])) if image.endswith('.jpg')]) 
+    image_dict = {versions[i]: {cat_names[i][j]: [os.path.join(root, versions[i], cat_names[i][j], image) 
+        for image in os.listdir(os.path.join(root, versions[i], cat_names[i][j])) if image.endswith('.jpg')]
         for j in range(5)} 
         for i in range(3)}
     
-    return image_dict
+    image_list = [image_path for version in img_dict.keys() 
+                     for category in img_dict[version].keys() 
+                     for image_path in img_dict[version][category]]
+    
+    return image_dict, image_list
 
-def get_stimulus_codes(image_dict):
-    cat_dict = {
-        "newolddelay": {"houses": 1, "landscapes": 2, "mobility": 3, "phones": 4, "smallAnimal": 5},
-        "newolddelay2": {"fruit":6, "kids": 7, "military": 8, "space": 9, "zzanimal": 10},
-        "newolddelay3": {"1cars":11, "2food": 12,"3people":13, "4spatial": 14, "5animals": 15}
-        }
+def get_stimulus_codes(i, category, version):
 
-    code_df = []
+
+    
     for version in image_dict.keys():
         for category in image_dict[version]:
             cat_code = cat_dict[version][category]

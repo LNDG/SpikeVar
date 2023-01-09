@@ -59,9 +59,10 @@ cat_names = [
         ["1cars", "2food","3people", "4spatial", "5animals"]
         ]
 
-img_dict = utils.get_image_paths(image_dir_base, versions, cat_names)
-stimulus_codes = utils.get_stimulus_codes(img_dict)
-num_images = len(stimulus_codes) # is this 590?
+img_dict, img_ls = utils.get_image_paths(image_dir_base, versions, cat_names)
+num_images = len(img_ls)
+stimulus_codes_df = []
+stimulus_codes_ls = []
 
 layer_names = ['first', 'second', 'third', 'fourth', 'fifth', 'final']
 layer_idx = {'first': 3, 'second': 6, 'third': 10, 'fourth':14, 'fifth': 18, 'final': 21}
@@ -75,12 +76,13 @@ layer_activations.update(final = np.empty([0, 4096]))
 layer_activations.update(all_vers = np.empty([0]))
 
 # set up arrays for complexity estimates
-lw_complexity_mean = {layer: np.empty([590,1]) for layer in layer_names}
-lw_complexity_sd = {layer: np.empty([590,1]) for layer in layer_names}
+complexity_dict = {}
+complexity_dict.update({f'{layer}_layer_mean': np.empty([590,1]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_sd': np.empty([590,1]) for layer in layer_names})
 
 # set up arrays for non-zero complexity
-lw_nz_complexity_mean = {layer: np.empty([590,1]) for layer in layer_names} # final complexity
-lw_nz_complexity_sd = {layer: np.empty([590,1]) for layer in layer_names}
+complexity_dict.update({f'{layer}_layer_non-zero_mean': np.empty([590,1]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_non-zero_sd': np.empty([590,1]) for layer in layer_names})
 
 # set up array for all features
 lw_feature_complexity_mean = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
@@ -96,9 +98,19 @@ for ver in versions:
     for cat in range(len(cat_names[ver])):
         img_ls = img_dict[ver][cat]
         batch_size = len(img_ls)
-        imgs_batch_tensor = np.empty((batch_size, 224, 224, 3))        
+        imgs_batch_tensor = np.empty((batch_size, 224, 224, 3))  
+        cat_code = cat_dict[version][category]      
         for i in range(batch_size):
-            img_tensor_rgb = utils.load_image_tensor(img_ls[i])
+            # get stimulus code
+            image_number = i + 1 
+            stim_code =  1000 + (cat_code * 100) + image_number
+            image_path = img_ls[i]
+            stimulus_codes_df.append({'stimulus_code': stim_code, 
+                'category': category, 
+                'version': version, 
+                'image_number': image_number, 
+                'image_path': image})
+            img_tensor_rgb = utils.load_image_tensor(image_path)
             # check size compatibility
             assert img_tensor_rgb.shape == (224, 224, 3), f"img_tensor.size:{img_tensor_rgb.size}"
             imgs_batch_tensor[i, :, :, :] = img_tensor_rgb
@@ -116,11 +128,11 @@ for i in range(num_images):
     for j, layer in enumerate(layer_names):
         img_lw_activations = layer_activations[layer][i,...]
         # get mean/sd of each layer
-        lw_complexity_mean[layer][i] = np.mean(img_lw_activations)         
-        lw_complexity_sd[layer][i] = np.std(img_lw_activations)
+        complexity_dict[f'{layer}_layer_mean'][i] = np.mean(img_lw_activations)         
+        complexity_dict[f'{layer}_layer_sd'][i] = np.std(img_lw_activations)
         # due to sparsity, get the mean only across non-zerop entries
-        lw_nz_complexity_mean[layer][i] = np.mean(img_lw_activations[np.nonzero(img_lw_activations)])
-        lw_nz_complexity_sd[layer][i] = np.std(img_lw_activations[np.nonzero(img_lw_activations)])
+        complexity_dict[f'{layer}_layer_non-zero_mean'][i] = np.mean(img_lw_activations[np.nonzero(img_lw_activations)])
+        complexity_dict[f'{layer}_layer_non-zero_sd'][i] = np.std(img_lw_activations[np.nonzero(img_lw_activations)])
         
         for n_feature in range(lw_feature_count[j]):
             feature_activations = img_lw_activations[i,:,:, n_feature]
