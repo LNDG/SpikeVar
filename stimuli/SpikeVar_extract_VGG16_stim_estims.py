@@ -63,21 +63,21 @@ layer_activations.update(all_vers = np.empty([0]))
 
 # set up arrays for complexity estimates
 complexity_dict = {}
-complexity_dict.update({f'{layer}_layer_mean': np.empty([590,1]) for layer in layer_names})
-complexity_dict.update({f'{layer}_layer_sd': np.empty([590,1]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_mean': np.empty([num_images,]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_sd': np.empty([num_images,]) for layer in layer_names})
 
 # set up arrays for non-zero complexity
-complexity_dict.update({f'{layer}_layer_non-zero_mean': np.empty([590,1]) for layer in layer_names})
-complexity_dict.update({f'{layer}_layer_non-zero_sd': np.empty([590,1]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_non-zero_mean': np.empty([num_images,]) for layer in layer_names})
+complexity_dict.update({f'{layer}_layer_non-zero_sd': np.empty([num_images,]) for layer in layer_names})
 
 # set up array for all features
-lw_feature_complexity_mean = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
-lw_feature_complexity_sd = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
-lw_feature_complexity_sum = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+lw_feature_complexity_mean = {layer_names[i]: np.empty([num_images, lw_feature_count[i]]) for i in range(5)}
+lw_feature_complexity_sd = {layer_names[i]: np.empty([num_images, lw_feature_count[i]]) for i in range(5)}
+lw_feature_complexity_sum = {layer_names[i]: np.empty([num_images, lw_feature_count[i]]) for i in range(5)}
 
 # non-zero
-lw_feature_nz_complexity_mean = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
-lw_feature_nz_complexity_sd = {layer_names[i]: np.empty([590, lw_feature_count[i]]) for i in range(5)}
+lw_feature_nz_complexity_mean = {layer_names[i]: np.empty([num_images, lw_feature_count[i]]) for i in range(5)}
+lw_feature_nz_complexity_sd = {layer_names[i]: np.empty([num_images, lw_feature_count[i]]) for i in range(5)}
 
 # get the layerwise feature maps for each iamge
 for version in version_dict.keys():
@@ -94,7 +94,7 @@ for version in version_dict.keys():
             stimulus_codes_df.append(stimulus_code)
             # load image and check size compatibility
             img_tensor_rgb = utils.load_image_tensor(image_path)
-            assert img_tensor_rgb.shape == (224, 224, 3), f"img_tensor.size:{img_tensor_rgb.size}"
+            assert img_tensor_rgb.size == (224, 224), f"img_tensor.size:{img_tensor_rgb.size}"
             imgs_batch_tensor[i, :, :, :] = img_tensor_rgb
         
         # predict activation maps for all images in this batch
@@ -102,8 +102,8 @@ for version in version_dict.keys():
         
         # key part: get and store feature maps of layers of interest 
         for layer in layer_names:
-            np.append(layer_activations[layer], (activations[layer_idx[layer]]), axis=0)     
-        print(f"Done with estimates for version {version}, category {category + 1}")
+            layer_activations[layer] = np.append(layer_activations[layer], activations[layer_idx[layer]], axis=0)     
+        print(f"Done with estimates for version: {version} and category: {category}")
 
 stimulus_codes_df = pd.DataFrame(stimulus_codes_df)
 
@@ -111,14 +111,17 @@ for i in range(num_images):
     for j, layer in enumerate(layer_names):
         img_lw_activations = layer_activations[layer][i,...]
         # get mean/sd of each layer
-        complexity_dict[f'{layer}_layer_mean'][i] = np.mean(img_lw_activations)         
+        complexity_dict[f'{layer}_layer_mean'][i] = np.mean(img_lw_activations)        
         complexity_dict[f'{layer}_layer_sd'][i] = np.std(img_lw_activations)
         # due to sparsity, get the mean only across non-zerop entries
         complexity_dict[f'{layer}_layer_non-zero_mean'][i] = np.mean(img_lw_activations[np.nonzero(img_lw_activations)])
         complexity_dict[f'{layer}_layer_non-zero_sd'][i] = np.std(img_lw_activations[np.nonzero(img_lw_activations)])
         
+        if layer == 'final': 
+            continue
+
         for n_feature in range(lw_feature_count[j]):
-            feature_activations = img_lw_activations[i,:,:, n_feature]
+            feature_activations = img_lw_activations[..., n_feature]
             # get mean/sd/sum of each feature in each layer
             lw_feature_complexity_mean[layer][i, n_feature] = np.nanmean(feature_activations)
             lw_feature_complexity_sd[layer][i, n_feature] = np.std(feature_activations)
@@ -127,34 +130,20 @@ for i in range(num_images):
             lw_feature_nz_complexity_mean[layer][i, n_feature] = np.nanmean(feature_activations[np.nonzero(feature_activations)])
             lw_feature_nz_complexity_sd[layer][i, n_feature] = np.std(feature_activations[np.nonzero(feature_activations)])
              
-# write results to csv
+# save layerwise mean/sd/sum to csv
 stim_dat = pd.DataFrame(complexity_dict)
 stim_dat = stimulus_codes_df.join(stim_dat)
 stim_dat.to_csv(output_dir + "SpikeVar_VGG16_Complexity.csv")
                               
 # save layer-wise feature maps
-for layer_name, feature_count in zip(layer_names, lw_feature_count): 
+for layer_name, feature_count in zip(layer_names[:-1], lw_feature_count[:-1]): 
     col_names = [f"Feature_{i:04d}" for i in range(feature_count)]
-    pd.DataFrame(lw_feature_complexity_mean[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_mean.csv"))
-    pd.DataFrame(lw_feature_complexity_sd[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sd.csv"))
-    pd.DataFrame(lw_feature_complexity_sum[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sum.csv"))
+    pd.DataFrame(lw_feature_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_mean.csv"))
+    pd.DataFrame(lw_feature_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sd.csv"))
+    pd.DataFrame(lw_feature_complexity_sum[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sum.csv"))
     # non-zero estimates
-    pd.DataFrame(lw_feature_nz_complexity_mean[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_nz_features_mean.csv"))
-    pd.DataFrame(lw_feature_nz_complexity_sd[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_nz_features_sd.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_mean.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_sd.csv"))
 
-
-
-num_cols_final = all_final_layer_activations.shape[1]
-rng = range(num_cols_final)
-new_cols = ['Feature_' + str(i+1) for i in range(num_cols_final)]
-pd.DataFrame(all_final_layer_activations).to_csv(save_dir_base + "SpikeVar_VGG16_lay_final_features.csv", header = new_cols)
-# save task variant info as well
-pd.DataFrame(all_vers).to_csv(save_dir_base + "SpikeVar_stim_task_variants.csv", header = ['Task_Variant'])
-
-
-# save the whole feature space per layer
-np.save(save_dir_base + "SpikeVar_VGG16_lay1_all_features", all_first_layer_activations)
-np.save(save_dir_base + "SpikeVar_VGG16_lay2_all_features", all_second_layer_activations)
-np.save(save_dir_base + "SpikeVar_VGG16_lay3_all_features", all_third_layer_activations)
-np.save(save_dir_base + "SpikeVar_VGG16_lay4_all_features", all_fourth_layer_activations)
-np.save(save_dir_base + "SpikeVar_VGG16_lay5_all_features", all_fifth_layer_activations)
+    # save the complete feature space per layer
+    np.save(os.path.join(output_dir, "SpikeVar_VGG16_lay1_all_features"), layer_activations[layer_name])
