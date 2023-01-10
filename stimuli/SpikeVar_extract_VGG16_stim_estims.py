@@ -1,12 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Tue Apr 12 09:40:41 2022
-
 @author: waschke & kamp
-
-Here we Calculate visual complexity by calculating the mean value of layer 4 output in VGG16
-key part in line 54-55
+Here we calculate visual complexity by calculating the mean value of layer 4 output in VGG16
 """
 
 import tensorflow as tf
@@ -144,6 +139,5 @@ for layer_name, feature_count in zip(layer_names[:-1], lw_feature_count[:-1]):
     # non-zero estimates
     pd.DataFrame(lw_feature_nz_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_mean.csv"))
     pd.DataFrame(lw_feature_nz_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_sd.csv"))
-
     # save the complete feature space per layer
-    np.save(os.path.join(output_dir, "SpikeVar_VGG16_lay1_all_features"), layer_activations[layer_name])
+    np.save(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_all_features"), layer_activations[layer_name])
