@@ -100,7 +100,9 @@ for version in version_dict.keys():
             layer_activations[layer] = np.append(layer_activations[layer], activations[layer_idx[layer]], axis=0)     
         print(f"Done with estimates for version: {version} and category: {category}")
 
+# save stimulus codes
 stimulus_codes_df = pd.DataFrame(stimulus_codes_df)
+stimulus_codes_df.to_csv(os.path.join(output_dir, "SpikeVar_VGG1_info.csv"))
 
 for i in range(num_images):
     for j, layer in enumerate(layer_names):
@@ -128,16 +130,16 @@ for i in range(num_images):
 # save layerwise mean/sd/sum to csv
 stim_dat = pd.DataFrame(complexity_dict)
 stim_dat = stimulus_codes_df.join(stim_dat)
-stim_dat.to_csv(output_dir + "SpikeVar_VGG16_Complexity.csv")
+stim_dat.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_complexity.csv"))
                               
 # save layer-wise feature maps
 for layer_name, feature_count in zip(layer_names[:-1], lw_feature_count[:-1]): 
     col_names = [f"Feature_{i:04d}" for i in range(feature_count)]
-    pd.DataFrame(lw_feature_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_mean.csv"))
-    pd.DataFrame(lw_feature_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sd.csv"))
-    pd.DataFrame(lw_feature_complexity_sum[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_features_sum.csv"))
+    pd.DataFrame(lw_feature_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_mp-layer_features_mean.csv"))
+    pd.DataFrame(lw_feature_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_mp-layer_features_sd.csv"))
+    pd.DataFrame(lw_feature_complexity_sum[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_mp-layer_features_sum.csv"))
     # non-zero estimates
-    pd.DataFrame(lw_feature_nz_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_mean.csv"))
-    pd.DataFrame(lw_feature_nz_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_non-zero_features_sd.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_mean[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_mp-layer_non-zero_features_mean.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_sd[layer_name], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_mp-layer_non-zero_features_sd.csv"))
     # save the complete feature space per layer
     np.save(os.path.join(output_dir, f"SpikeVar_VGG16_{layer_name}_layer_all_features"), layer_activations[layer_name])

@@ -24,8 +24,8 @@ def get_stimulus_code(image_number, category_code, category, version, image_path
     version_numbers = {"newolddelay":1, "newolddelay2": 2, "newolddelay3": 3}
     stim_code =  1000 + (category_code * 100) + image_number
     stimulus_dict = {'stimulus_code': stim_code, 
-        'category': category, 
-        'version': version, 
+        'version': version,
+        'category': category,  
         'version_number': version_numbers[version],
         'image_number': image_number, 
         'image_path': image_path}
