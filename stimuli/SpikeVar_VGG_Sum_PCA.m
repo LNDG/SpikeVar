@@ -1,5 +1,6 @@
 clear
 clc
+
 % check if we are in the correct directory, change it if needed
 cd('/Users/waschke/OneDrive/Old data and code/SV/OurCode/')
 %  load info about recognition phase
