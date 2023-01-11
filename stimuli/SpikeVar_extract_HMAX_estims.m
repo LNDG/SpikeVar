@@ -13,24 +13,27 @@ cat_dict = [{"houses", "landscapes", "mobility", "phones", "smallAnimal"},...
     {"fruit", "kids", "military", "space", "zzanimal"},...
     {"1cars", "2food","3people", "4spatial", "5animals"}];
 cat_nums = 1:15;
+
 %% Initialize S1 gabor filters and C1 parameters
 fprintf('initializing S1 gabor filters\n');
 orientations = [90 -45 0 45]; % 4 orientations for gabor filters
 RFsizes      = 7:2:37;        % receptive field sizes
 div          = 4:-.05:3.25;    % tuning parameters for the filters' "tightness"
 [filterSizes,filters,c1OL,~] = initGabor(orientations,RFsizes,div);
-
 fprintf('initializing C1 parameters\n')
 c1Scale = 1:2:18; % defining 8 scale bands
 c1Space = 8:2:22; % defining spatial pooling range for each scale band
+
 %% Load the universal patch set.
 fprintf('Loading the universal patch set\n')
 load('universal_patch_set.mat','patches','patchSizes');
 nPatchSizes = size(patchSizes,2);
 
 %% loop across versions
-all_HMAX_info = table(NaN(590,1),NaN(590,1),NaN(590,1), 'VariableNames', {'StimulusCode', 'C1mean', 'C2mean'});
-stim_codes = [];
+all_HMAX_info = table(NaN(590,1), NaN(590,1), NaN(590,1), NaN(590,1), NaN(590,1), ... 
+    'VariableNames', {'stimulus_code', 'version', 'category', 'c1_mean', 'c2_mean'});
+stim_codes = []; pic_paths = [];
+stim_versions = []; stim_categories = [];
 c1_mean = []; c2_mean = [];
 patch_wise_med_c1 = []; patch_wise_med_c2 = [];
 patch_wise_sd_c1 = []; patch_wise_sd_c2 = [];
@@ -49,12 +52,17 @@ for ver = 1:length(versions)
         
         % loop across pictures in folder, load and make grayscale
         for ipic = 1:npics
+            % store version and category for each stimulus 
+            stim_versions = [stim_versions; ver];
+            stim_categories = [stim_categories; cat];
+            
             % get the unique stimulus number that is used later
             stim_code = 1000 + cat_nums(5*(ver-1)+cat)*100+ipic;
             stim_codes = [stim_codes; stim_code];
             
             % load image
             pic_path = [catdir + piclist(ipic).name];
+            pic_paths = [pic_paths; pic_path];
             picdat = load_pic(pic_path);
             
             % Extract layer responses
@@ -89,10 +97,14 @@ for ver = 1:length(versions)
     end
     
 end
+
 % store all data in one table
-all_HMAX_info.StimulusCode = stim_codes;
-all_HMAX_info.C1mean = c1_mean;
-all_HMAX_info.C2mean = c2_mean;
+all_HMAX_info.stimulus_code = stim_codes;
+all_HMAX_info.version = stim_versions;
+all_HMAX_info.category = stim_categories; 
+all_HMAX_info.c1_mean = c1_mean;
+all_HMAX_info.c2_mean = c2_mean;
+writetable(all_HMAX_info, [save_dir_base + 'HMAX_info.csv'])
 
 save([save_dir_base + 'HMAX_estims_allstims.mat'], 'all_HMAX_info',...
     'patch_wise_med_c1', 'patch_wise_med_c2', 'patch_wise_sd_c1', 'patch_wise_sd_c2',...

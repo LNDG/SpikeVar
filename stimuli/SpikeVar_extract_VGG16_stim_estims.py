@@ -130,7 +130,7 @@ for i in range(num_images):
 # save layerwise mean/sd/sum to csv
 stim_dat = pd.DataFrame(complexity_dict)
 stim_dat = stimulus_codes_df.join(stim_dat)
-stim_dat.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_complexity.csv"))
+stim_dat.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_Complexity.csv"))
                               
 # save layer-wise feature maps
 for layer_name, feature_count in zip(layer_names[:-1], lw_feature_count[:-1]): 
