@@ -39,11 +39,11 @@ for i=1:num_data
     spike_data(i).participant = NOsessions(i).patient_nb;
     spike_data(i).session = NOsessions(i).patientsession;
     task_variant = NOsessions(i).variant;
-    spike_data(i).task_variant = task_variant;
+    spike_data(i).taskvariant = task_variant;
     spike_data(i).diagnosisCode = NOsessions(i).diagnosisCode;
     spike_data(i).NOind = NOsessions(i).index; %index in NoSessions
     num_trials = length(allData(i).stimuliLearn);
-    spike_data(i).num_trials = num_trials;
+    spike_data(i).numtrials = num_trials;
     spike_data(i).age = age(i, 2);
     spike_data(i).bad_periods = NaN;
     spike_data(i).LresponsesEventfile = length(allData(i).LresponsesEventfile); % used to drop later
@@ -144,8 +144,10 @@ end
 drop_me =([NOsessions.blockIDRecog]==3|[spike_data.LresponsesEventfile]==89); %|badperiods==1%|badperiods==1
 spike_data=spike_data(~drop_me);
 
-% save data struct
-save([data_dir 'SpikeVar_spike_data.mat'], 'spike_data')
+%% save data
+spike_data_table = construct_table(spike_data);
+save([data_dir 'SpikeVar_spike_data.mat'], 'spike_data', 'spike_data_table');
+
 
 
 
