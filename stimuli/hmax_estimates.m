@@ -5,7 +5,7 @@ addpath('/Users/kamp/PhD/spikevar/repo/SpikeVar/toolboxes/hmaxMatlab');
 % paths to stimuli
 % Use minimally renamed verion since it makes sorting things easier
 image_dir_base = "/Users/kamp/PhD/spikevar/stimuli_rn/";
-save_dir_base = "/Users/kamp/PhD/spikevar/hmax_output/";
+save_dir_base = "/Users/kamp/PhD/spikevar/output/hmax_output/";
 versions = ["newolddelay", "newolddelay2", "newolddelay3"];
 
 %% set up categroy names etc

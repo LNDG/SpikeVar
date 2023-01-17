@@ -1,12 +1,12 @@
 clear
 clc
 % check if we are in the correct directory, change it if needed
-base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar/'
-stim_dir = [base_dir + 'stimuli/']
+base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar/';
+stim_dir = [base_dir 'stimuli/'];
 cd(stim_dir)
 %  load info about recognition phase and new HMAX estimates
 load('SpikeVar_learn_recog_info.mat')
-hmax_dir = '/Users/kamp/PhD/spikevar/hmax_output/';
+hmax_dir = '/Users/kamp/PhD/spikevar/output/hmax_output/';
 load([hmax_dir  'HMAX_estims_allstims.mat'])
 
 %% PCA on patch-wise C1 an C2 estimates
@@ -23,11 +23,11 @@ patch_sd_c2 = std(patch_wise_med_c2,[],2);
 
 %% new table
 % only have some basic info in there
-c1_pc1_table = table; c1_pc1_table.participant = fulltable.Participant;
-c2_pc1_table = table; c2_pc1_table.participant = fulltable.Participant;
+c1_pc1_table = table; c1_pc1_table.participant = fulltable_learn.Participant;
+c2_pc1_table = table; c2_pc1_table.participant = fulltable_learn.Participant;
 
 %% get stimulus indices
-stim_learn_idx = get_stim_learn_idx(all_HMAX_info, fulltable);
+stim_learn_idx = get_stim_learn_idx(all_HMAX_info, fulltable_learn);
 
 %% add new HMAX estimated to table
 c1_pc1_table.c1_med_score = pca_med_c1.score(stim_learn_idx,1);

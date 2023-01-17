@@ -26,7 +26,7 @@ for i = 1:2
     for j = 1:length(layer_names)
         layer = [layer_names{j}, '_layer'];
         % load layer-wise feature values
-        file_path = [vgg_dir, 'SpikeVar_VGG16_', layer_names{j}, '_layer_features_', stats{i}, '.csv'];
+        file_path = [vgg_dir, 'SpikeVar_VGG16_', layer_names{j}, '_mp-layer_features_', stats{i}, '.csv'];
         layer_wise_features = load_vgg16_layer_features(file_path);
         % apply pca
         layer_wise_pca.(layer) = get_layer_wise_pca(layer_wise_features);
