@@ -34,6 +34,11 @@ load([neuro_dir 'SpikeVar_spike_data_PE.mat'], 'spike_data_table');
 % get IDs
 pat_ids = unique(spiking_data_table.Participant);
 
+for s = 1:length(pat_ids)
+    cid = pat_ids(s);
+end
+
+
 %% loop across subjects
 clear all_sub_neu_area
 for sub_id = 1:length(pat_ids)
