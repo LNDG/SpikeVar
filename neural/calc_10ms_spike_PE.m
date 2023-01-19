@@ -3,7 +3,7 @@ clc
 % check if we are in the correct directory, change it if needed
 base_dir = '/Users/kamp/PhD/spikevar';
 neuro_dir = fullfile(base_dir, 'repo', 'SpikeVar', 'neural/');
-data_dir = fullfile(base_dir,'data', 'neuro/');
+data_dir = fullfile(base_dir,'output', 'neuro/');
 stim_dir = fullfile(base_dir,'stimuli_rn/');
 tool_dir = fullfile(base_dir, 'repo', 'SpikeVar', 'toolboxes');
 

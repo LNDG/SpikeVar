@@ -1,44 +1,43 @@
 clear
 clc
+
 % check if we are in the correct directory, change it if needed
-cd('/Users/waschke/OneDrive/Old data and code/SV/OurCode/')
+base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar';
+stim_dir = fullfile(base_dir, 'stimuli/');
+pls_dir = fullfile(base_dir, 'pls/');
+hmax_dir = '/Users/kamp/PhD/spikevar/output/hmax_output/';
+vgg_dir = '/Users/kamp/PhD/spikevar/output/vgg16_output/';
+neuro_dir = '/Users/kamp/PhD/spikevar/output/neuro/';
+cd(stim_dir)
+
+% add toolboxes
+addpath(genpath(fullfile(base_dir, 'toolboxes', 'pls_rank'));
+
+% VGG PCs
+load([vgg_dir, 'VGG16_pca.mat'], 'pc1_table');
+vgg_pc1_table = pc1_table;
+
+% HMAX PCs
+load([hmax_dir 'HMAX_pca.mat'], 'pc1_table');
+hmax_pc1_table = pc1_table;
+
 % add essential scripts
 addpath('/Users/waschke/Documents/MATLAB/Code/Scripts/Essentials/')
 addpath(genpath('/Users/waschke/Documents/Matlabtoolboxes/PLS/'))
-% only needed for plotting
-addpath(genpath('/Users/waschke/Documents/Matlabtoolboxes/RainCloudPlots/'))
-addpath('/Users/waschke/Documents/Matlabtoolboxes/cbrewer/')
-addpath('/Users/waschke/Documents/Matlabtoolboxes/Robust_Statistical_Toolbox/')
 
 % VGG PCs
-vggdir = '/Users/waschke/OneDrive/Old data and code/VGG16_output/';
-load([vggdir 'VGG16_all_encoding_recog_layer1_sum_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer2_sum_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer3_sum_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer4_sum_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer5_sum_pc1.mat']);
+load([vgg_dir, 'VGG16_all_encoding_recog_pc1_sd.mat'], 'pc1_table')
 
-load([vggdir 'VGG16_all_encoding_recog_layer1_wz_sd_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer2_wz_sd_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer3_wz_sd_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer4_wz_sd_pc1.mat']);
-load([vggdir 'VGG16_all_encoding_recog_layer5_wz_sd_pc1.mat']);
+% spiking PE
+load([neuro_dir 'SpikeVar_spike_data_PE.mat'], 'spike_data_table');
 
-% also load HMAX components
-hmax_dir = '/Users/waschke/OneDrive/Old data and code/HMAX output/';
-load([hmax_dir 'HMAX_all_encoding_recog_C1_pc1.mat'])
-load([hmax_dir 'HMAX_all_encoding_recog_C2_pc1.mat'])
-
-% load spiking PE
-load('SpikeVar_all_trials_incl_10_ms_PE.mat')
-pe_table = perm_active_table;
-% set of relevant IDs
-cur_pat_ids = unique(pe_table.Participant);
+% get IDs
+pat_ids = unique(spiking_data_table.Participant);
 
 %% loop across subjects
 clear all_sub_neu_area
-for sub_id = 1:length(cur_pat_ids)
-    cid = cur_pat_ids(sub_id);
+for sub_id = 1:length(pat_ids)
+    cid = pat_ids(sub_id);
     % get relevant indices
     % set of neurons (all, hippocampus <3  or amygdala >2)
     % 1 = right Hippocampius, 2 = left Hippocampus

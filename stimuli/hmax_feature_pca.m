@@ -23,22 +23,20 @@ patch_sd_c2 = std(patch_wise_med_c2,[],2);
 
 %% new table
 % only have some basic info in there
-c1_pc1_table = table; c1_pc1_table.participant = fulltable_learn.Participant;
-c2_pc1_table = table; c2_pc1_table.participant = fulltable_learn.Participant;
+pc1_table = table; c1_pc1_table.participant = fulltable_learn.Participant;
 
 %% get stimulus indices
 stim_learn_idx = get_stim_learn_idx(all_HMAX_info, fulltable_learn);
 
 %% add new HMAX estimated to table
-c1_pc1_table.c1_med_score = pca_med_c1.score(stim_learn_idx,1);
-c2_pc1_table.c2_med_score = pca_med_c2.score(stim_learn_idx,1);
+pc1_table.c1_med_score = pca_med_c1.score(stim_learn_idx,1);
+pc1_table.c2_med_score = pca_med_c2.score(stim_learn_idx,1);
 
-c1_pc1_table.c1_sd_score = pca_sd_c1.score(stim_learn_idx,1);
-c2_pc1_table.c2_sd_score = pca_sd_c2.score(stim_learn_idx,1);
+pc1_table.c1_sd_score = pca_sd_c1.score(stim_learn_idx,1);
+pc1_table.c2_sd_score = pca_sd_c2.score(stim_learn_idx,1);
 
-c1_pc1_table.c1_patch_sd = patch_sd_c1(stim_learn_idx,1);
-c2_pc1_table.c2_patch_sd = patch_sd_c2(stim_learn_idx,1);
+pc1_table.c1_patch_sd = patch_sd_c1(stim_learn_idx,1);
+pc1_table.c2_patch_sd = patch_sd_c2(stim_learn_idx,1);
 
 %% save estimates
-save([hmax_dir 'HMAX_all_encoding_recog_C1_pc1.mat'], 'c1_pc1_table')
-save([hmax_dir 'HMAX_all_encoding_recog_C2_pc1.mat'], 'c2_pc1_table')
+save([hmax_dir 'HMAX_pca.mat'], 'pc1_table')
