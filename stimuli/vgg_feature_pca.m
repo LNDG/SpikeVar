@@ -39,8 +39,7 @@ for i = 1:2
         % determine highest variance explained explained to get num of components for
         % each layer
         max_1st_pc_var = max([max_1st_pc_var, layer_wise_pca.(layer).exp_var_1st_pc]);
-    end
-          
+    end        
     % save results
     for j = 1:length(layer_names)
         layer = [layer_names{j} '_layer'];
