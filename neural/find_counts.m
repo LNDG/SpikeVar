@@ -1,4 +1,4 @@
-function [outmat,ax]=findCounts(timeStamps,periods,binwidth,overlap)
+function [outmat,ax]=find_counts(timeStamps,periods,binwidth,overlap)
 %function outmat=findCounts(timeStamps,periods,binwidth)
 %size(periods,1) is the number of trials
 %spikes are counted left-continuous.. so >=left bin and <right bin, based
