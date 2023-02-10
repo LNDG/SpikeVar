@@ -14,7 +14,7 @@ import utils
 # set up folder structure
 base_dir = "/Users/kamp/PhD/spikevar"
 image_dir_base = os.path.join(base_dir, "stimuli_rn")
-output_dir = os.path.join(base_dir, "output", "vgg16_output_test")
+output_dir = os.path.join(base_dir, "repo", "Spikevar", "output", "vgg16")
 
 # versions and subcategories
 version_dict = {
@@ -83,6 +83,9 @@ lw_feature_complexity_sum = {layer: np.empty([num_images, layer_dict[layer]['n_f
 lw_feature_nz_complexity_mean = {layer: np.empty([num_images, layer_dict[layer]['n_features']]) for layer in layer_dict.keys() if layer != 'final'}
 lw_feature_nz_complexity_sd = {layer: np.empty([num_images, layer_dict[layer]['n_features']]) for layer in layer_dict.keys() if layer != 'final'}
 
+# number of non-zero
+lw_feature_nz_number = {layer: np.empty([num_images, layer_dict[layer]['n_features']]) for layer in layer_dict.keys() if layer != 'final'}
+
 # get the layerwise feature maps for each iamge
 for version in version_dict.keys():
     for category in version_dict[version]:
@@ -111,7 +114,7 @@ for version in version_dict.keys():
 
 # save stimulus codes
 stimulus_codes_df = pd.DataFrame(stimulus_codes_df)
-stimulus_codes_df.to_csv(os.path.join(output_dir, "SpikeVar_VGG1_info.csv"))
+stimulus_codes_df.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_info.csv"))
 
 for i in range(num_images):
     for layer in layer_dict.keys():
@@ -135,20 +138,26 @@ for i in range(num_images):
             # same for non-zero entries
             lw_feature_nz_complexity_mean[layer][i, n_feature] = np.nanmean(feature_activations[np.nonzero(feature_activations)])
             lw_feature_nz_complexity_sd[layer][i, n_feature] = np.std(feature_activations[np.nonzero(feature_activations)])
+            # number of non-zero entries
+            lw_feature_nz_number[layer][i, n_feature] = np.sum(feature_activations!=0)
              
 # save layerwise mean/sd/sum to csv
-stim_dat = pd.DataFrame(complexity_dict)
-stim_dat = stimulus_codes_df.join(stim_dat)
-stim_dat.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_Complexity.csv"))
+# stim_dat = pd.DataFrame(complexity_dict)
+# stim_dat = stimulus_codes_df.join(stim_dat)
+# stim_dat.to_csv(os.path.join(output_dir, "SpikeVar_VGG16_Complexity.csv"))
                               
 # save layer-wise feature map mean/sd/sum
 for layer in layer_dict.keys(): 
+    if layer == 'final': 
+        continue
     col_names = [f"Feature_{i:04d}" for i in range(layer_dict[layer]['n_features'])]
     pd.DataFrame(lw_feature_complexity_mean[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_mean.csv"))
     pd.DataFrame(lw_feature_complexity_sd[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_sd.csv"))
     pd.DataFrame(lw_feature_complexity_sum[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_sum.csv"))
     # non-zero estimates
-    pd.DataFrame(lw_feature_nz_complexity_mean[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_non-zero_features_mean.csv"))
-    pd.DataFrame(lw_feature_nz_complexity_sd[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_non-zero_features_sd.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_mean[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_nz_mean.csv"))
+    pd.DataFrame(lw_feature_nz_complexity_sd[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_nz_sd.csv"))
+    # non-zero number
+    pd.DataFrame(lw_feature_nz_number[layer], columns=col_names).to_csv(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_mp-layer_features_nz_num.csv"))
     # save the complete feature space per layer
-    np.save(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_layer_all_features"), layer_activations[layer])
+    # np.save(os.path.join(output_dir, f"SpikeVar_VGG16_{layer}_layer_all_features"), layer_activations[layer])

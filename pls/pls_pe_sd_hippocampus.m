@@ -5,10 +5,11 @@ clc
 base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar';
 stim_dir = fullfile(base_dir, 'stimuli/');
 pls_dir = fullfile(base_dir, 'pls/');
-hmax_dir = '/Users/kamp/PhD/spikevar/output/hmax_output/';
-vgg_dir = '/Users/kamp/PhD/spikevar/output/vgg16_output/';
-neuro_dir = '/Users/kamp/PhD/spikevar/output/neuro/';
-cd(stim_dir)
+hmax_dir = fullfile(base_dir, 'output', 'hmax/');
+vgg_dir = fullfile(base_dir, 'output', 'vgg16/');
+neuro_dir = fullfile(base_dir, 'output', 'neuro/');
+pls_output = fullfile(base_dir, 'output', 'pls/');
+cd(pls_dir)
 
 % add toolboxes
 addpath(genpath(fullfile(base_dir, 'toolboxes', 'pls_rank')));
@@ -18,14 +19,13 @@ vgg_pc1_table = pc1_table;
 % HMAX PCs
 load([hmax_dir 'HMAX_pca.mat'], 'pc1_table');
 hmax_pc1_table = pc1_table;
-% VGG PCs
-load([vgg_dir, 'VGG16_all_encoding_recog_pc1_sd.mat'], 'pc1_table')
 % spiking PE
 load([neuro_dir 'SpikeVar_spike_data_PE.mat'], 'spike_data_table');
 % get IDs
 pat_ids = unique(spike_data_table.Participant);
 
 %% loop across subjects
+count = 1; 
 for pat_id = pat_ids'
     % get relevant indices
     % set of neurons (all, hippocampus <3  or amygdala >3)
@@ -46,15 +46,11 @@ for pat_id = pat_ids'
              spike_data_table.brainArea<3 &spike_data_table.Session==i_ses));
         % save neuron info
         neuron_ids = unique(spike_data_table.NeuronCount(hpc_ids));
-        all_neuron_ids = unique(spike_data_table.NeuronCount(hpc_ids));
-        for i_neuron = 1:length(all_neuron_ids)
-            all_neuron_area(i_neuron) = unique(spike_data_table.brainArea(...
-                spike_data_table.NeuronCount == all_neuron_ids(i_neuron)));
-        end
+
         % extract PE for different motif lengths
-        pe_dat_2 = spike_data_table.spike_permEN_2(hpc_ids);
-        pe_dat_3 = spike_data_table.spike_permEN_3(hpc_ids);
-        pe_dat_4 = spike_data_table.spike_permEN_4(hpc_ids);
+        pe_dat_2 = spike_data_table.spike_permEn_2(hpc_ids);
+        pe_dat_3 = spike_data_table.spike_permEn_3(hpc_ids);
+        pe_dat_4 = spike_data_table.spike_permEn_4(hpc_ids);
         
         % re-arrange data PE data
         n_neuron_all = length(neuron_ids);
@@ -63,15 +59,9 @@ for pat_id = pat_ids'
         pe_dat_4 = reshape(pe_dat_4, n_trials_all, n_neuron_all);
 
         % drop neurons that are very silent
-        drop_neurons = (mean(pe_dat_2)<.0001) | ...
-                       (mean(pe_dat_3)<.0001) | ... 
-                       (mean(pe_dat_4)<.0001);
-        pe_dat_2(:, drop_neurons) = [];
-        pe_dat_3(:, drop_neurons) = [];
-        pe_dat_4(:, drop_neurons) = [];
-        used_neuron_ids = all_neurons_ids;
-        used_neuron_ids(drop_neurons) = [];
-        n_neuron_used = length(all_neuron_ids);
+        pe_dat_2(:, (mean(pe_dat_2))<.0001) = [];
+        pe_dat_3(:, (mean(pe_dat_2))<.0001) = [];
+        pe_dat_4(:, (mean(pe_dat_2))<.0001) = [];
         
         % also save average PE of remaining neurons
         avg_pe_mat_2 = mean(pe_dat_2);
@@ -79,7 +69,7 @@ for pat_id = pat_ids'
         avg_pe_mat_4 = mean(pe_dat_4);
 
         % another check if we still have neurons left
-        if size(pe_dat_2,2) == 0
+        if size(pe_dat_2,2) < 2
             continue
         end
                
@@ -98,25 +88,29 @@ for pat_id = pat_ids'
         
         % prepare VGG data
         layers = {'first', 'second', 'third', 'fourth', 'fifth'};
-        for layer = layers
+        for i = 1:length(layers)
             % vgg sd 
-            col_name = [layer '_layer_sd_score'];
+            col_name = [layers{i} '_layer_nz_sd_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
                 hpc_ids, n_trials_all, n_neuron_all, drop_trials);        
             % vgg sum 
-            col_name = [layer '_layer_sum_score'];
+            col_name = [layers{i} '_layer_sum_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
                 hpc_ids, n_trials_all, n_neuron_all, drop_trials); 
+            % vgg non-zero number 
+            col_name = [layers{i} '_layer_nz_num_score'];
+            stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
+                hpc_ids, n_trials_all, n_neuron_all, drop_trials);  
         end
         % prepare hmax data
         layers = {'c1', 'c2'};
-        for layer = layers
+        for i = 1:length(layers)
             % hmax sd 
-            col_name = [layer '_sd_score'];
+            col_name = [layers{i} '_sd_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(hmax_pc1_table(:, col_name), ... 
                 hpc_ids, n_trials_all, n_neuron_all, drop_trials); 
-            % hmax sd 
-            col_name = [layer '_sum_score'];
+            % hmax med
+            col_name = [layers{i} '_sum_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(hmax_pc1_table(:, col_name), ... 
                 hpc_ids, n_trials_all, n_neuron_all, drop_trials);
         end
@@ -137,11 +131,16 @@ for pat_id = pat_ids'
             stim_data.third_layer_sum,...
             stim_data.fourth_layer_sum,...
             stim_data.fifth_layer_sum,...
-            stim_data.first_layer_sd,...                                   % vgg sd
-            stim_data.second_layer_sd,...
-            stim_data.third_layer_sd,...
-            stim_data.fourth_layer_sd,...
-            stim_data.fifth_layer_sd,...
+            stim_data.first_layer_nz_sd,...                                % vgg sd
+            stim_data.second_layer_nz_sd,...
+            stim_data.third_layer_nz_sd,...
+            stim_data.fourth_layer_nz_sd,...
+            stim_data.fifth_layer_nz_sd,...
+            stim_data.first_layer_nz_num,...                               % vgg num
+            stim_data.second_layer_nz_num,...
+            stim_data.third_layer_nz_num,...
+            stim_data.fourth_layer_nz_num,...
+            stim_data.fifth_layer_nz_num,...
             stim_data.c1_sum,...                                           % hmax sum
             stim_data.c2_sum,...
             stim_data.c1_sd,...                                            % hmax sd
@@ -156,34 +155,44 @@ for pat_id = pat_ids'
             stim_data.third_layer_sum,...
             stim_data.fourth_layer_sum,...
             stim_data.fifth_layer_sum,...
-            stim_data.third_layer_sd,...
-            stim_data.fourth_layer_sd,...
-            stim_data.fifth_layer_sd,...
+            stim_data.third_layer_nz_sd,...
+            stim_data.fourth_layer_nz_sd,...
+            stim_data.fifth_layer_nz_sd,...
+            stim_data.third_layer_nz_num,...
+            stim_data.fourth_layer_nz_num,...
+            stim_data.fifth_layer_nz_num,...
             stim_data.c2_sum,...
             stim_data.c2_sd];
         result_late = pls_analysis({neuro_data}, n_trails_used, 1, option);
 
         % run one model using early layers
         option.stacked_behavdata = [
-            stim_data.first_layer_sum,...                                  
+            stim_data.first_layer_sum,...                                  % vgg sum
             stim_data.second_layer_sum,...
             stim_data.third_layer_sum,...
-            stim_data.first_layer_sd,...                                   
-            stim_data.second_layer_sd,...
-            stim_data.third_layer_sd,...
-            stim_data.c1_sum,...                                           
-            stim_data.c1_sd];                                               
-        result_early = pls_analysis(datamat_lst, n_trails_used, 1, option);
+            stim_data.first_layer_nz_sd,...                                % vgg sd
+            stim_data.second_layer_nz_sd,...
+            stim_data.third_layer_nz_sd,...
+            stim_data.first_layer_nz_num,...                               % vgg num
+            stim_data.second_layer_nz_num,...
+            stim_data.third_layer_nz_num,...
+            stim_data.c1_sum,...                                           % hmax sum
+            stim_data.c1_sd];                                              % hmax sd                                          
+        result_early = pls_analysis({neuro_data}, n_trails_used, 1, option);
 
         % save subject-specific stimulus weights
         behav_weights.all_layers{pat_id,i_ses} = result_combined.v;
         behav_weights.late_layers{pat_id,i_ses} = result_late.v;
         behav_weights.early_layers{pat_id,i_ses} = result_early.v;
+        
+        neuro_weights.all_layers{pat_id,ises} = result_combined{ises}.u;
+        neuro_weights.late_layers{pat_id,ises} = result_late{ises}.u;
+        neuro_weights.early_layers{pat_id,ises} = result_early{ises}.u;
 
         % save number of trials
-        trail_nums(pat_id, i_ses) = n_trails_used;
+        trial_nums(pat_id, i_ses) = n_trails_used;
         % number of neurons
-        neuron_nums(pat_id, i_ses) = n_neurons_used;
+        neuron_nums(pat_id, i_ses) = n_neuron_all;
 
         % save LVLV corrs
         lvlv_corrs.all_layers{i_ses}(pat_id) = result_combined.lvlvcorr(1);
@@ -206,6 +215,9 @@ for pat_id = pat_ids'
             result_early.boot_result.lvlvcorrdistrib(1,:)),99)];
     end
 end
-% save stuff
-save('SpikeVar_early_vs_late_PE_PLS_results.mat', 'behav_weights',...
-    'lvlv_corrs','lvlv_corr_lims', 'trial_nums', 'neuron_nums')
+
+% save 
+save([pls_output 'SpikeVar_early_vs_late_PE_PLS_results.mat'], ...
+    'behav_weights', 'neuro_weights', ...
+    'lvlv_corrs','lvlv_corr_lims', ... 
+    'trial_nums', 'neuron_nums')

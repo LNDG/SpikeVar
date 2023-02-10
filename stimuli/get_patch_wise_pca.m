@@ -1,4 +1,12 @@
 function results = apply_pca(feature_wise_estim)
+    
+    % check for features without variance
+    feature_var = var(feature_wise_estim, 0, 1); 
+    
+    if ~ all(feature_var)  
+        feature_wise_estim(:, feature_var==0) = [];
+    fi 
+    
     [results.coeff,results.score,...
      results.latent,~,results.exp_var,~] = ...
         pca(zscore(feature_wise_estim), 'Centered', true,'VariableWeights', 'Variance');
