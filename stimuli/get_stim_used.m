@@ -1,9 +1,9 @@
-function all_stim = get_stim_used(all_HMAX_info, fulltable_learn, fulltable_recog)
-%% get stimulus that were presented during encoding
-    n_images = size(all_HMAX_info,1) 
+function stim_used = get_stim_used(info, fulltable_learn, fulltable_recog)
+%% get all stimulus that were presented during encoding and recognition
+    n_images = size(info,1);
     for i = 1:n_images
-       stim_learn(i) = ismember(all_HMAX_info.StimulusCode(i), fulltable_learn.stimuliLearn); % refactor
-       stim_recog(i) = ismember(all_HMAX_info.StimulusCode(i), fulltable_recog.stimuliRecog);
+       stim_learn(i) = ismember(info.stimulus_code(i), fulltable_learn.stimuliLearn); 
+       stim_recog(i) = ismember(info.stimulus_code(i), fulltable_recog.stimuliRecog);
     end
-    all_stim  = stim_learn + stim_recog;
+    stim_used  = stim_learn + stim_recog;
 end
