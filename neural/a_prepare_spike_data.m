@@ -1,27 +1,29 @@
-clear
-clc
-% check if we are in the correct directory, change it if needed
-base_dir = '/Users/kamp/PhD/spikevar';
-neuro_dir = fullfile(base_dir, 'repo', 'SpikeVar', 'neural/');
-data_dir = fullfile(base_dir,'data', 'neuro/');
-stim_dir = fullfile(base_dir,'stimuli_rn/');
+function spike_data_table = a_prepare_spike_data(base_dir, data_dir, stim_dir)
+%a_prepare_binned_spike_data Extracts the spiking data binned in 10ms bins from the raw data files. 
+%   Takes as input the base directory of the code, the data directory and
+%   the directory containing all the stimuli. 
+%   Returns the spiking data as table and saves it to SpikeVar_spike_data.mat
 
-load([stim_dir 'SpikeVar_stiminfo_V1.mat'], 'v1_stims');
-load([stim_dir 'SpikeVar_stiminfo_V2.mat'], 'v2_stims');
-load([stim_dir 'SpikeVar_stiminfo_V3.mat'], 'v3_stims');
+%% create folder structure and 
+neuro_dir = fullfile(base_dir, 'output', 'neuro/');
+load([stim_dir + 'SpikeVar_stiminfo_V1.mat'], 'v1_stims');
+load([stim_dir + 'SpikeVar_stiminfo_V2.mat'], 'v2_stims');
+load([stim_dir + 'SpikeVar_stiminfo_V3.mat'], 'v3_stims');
 stim_info = struct('v1', v1_stims, 'v2', v2_stims, 'v3', v3_stims);
 
-load([data_dir 'ProcessedOutput.mat'], 'allData');
-load([data_dir 'NOsessions.mat'], 'NOsessions');
+load([data_dir + 'neuro/ProcessedOutput.mat'], 'allData');
+load([data_dir + 'neuro/NOsessions.mat'], 'NOsessions');
 
 % check if sessionIDs are the same in allData and NOsessions
 if ~all(cellfun(@strcmp, {allData.sessionID}, {NOsessions.sessionID}))
     keyboard
 end
 
-age = get_ages();
+%% load age data
+age = load([data_dir 'demographics/AgeSex.mat']).corval;
+age = sortrows(age,1);
 
-%%
+%% process spiking data
 % initiat data structure
 num_data = length(allData); 
 neuron_count = 1; %running neuron count
@@ -145,9 +147,9 @@ drop_me =([NOsessions.blockIDRecog]==3|[spike_data.LresponsesEventfile]==89); %|
 spike_data=spike_data(~drop_me);
 
 %% save data
+% convert spike data into table
 spike_data_table = construct_table(spike_data);
-save([data_dir 'SpikeVar_spike_data.mat'], 'spike_data', 'spike_data_table');
+save([neuro_dir 'SpikeVar_spike_data.mat'], 'spike_data', 'spike_data_table');
 
-
-
+end
 

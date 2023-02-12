@@ -1,27 +1,18 @@
-clear
-clc
-base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar';
-stim_dir = fullfile(base_dir, 'stimuli/');
-vgg_dir = fullfile(base_dir, 'output', 'vgg16/');
-hmax_dir = fullfile(base_dir, 'output', 'hmax/');
-data_dir = fullfile(base_dir, 'data/');
-cd(stim_dir)
+function pc1_table = d_vgg16_pca(vgg_dir, stim_info, fulltable_learn, fulltable_recog)
+%vgg16_pca Performs pca on the feature estimates of each layer extracted
+%   from VGG16.
+%   Takes as input the directory where the VGG16 estimates have been safed,
+%   the stimuli codes and behavioral info tables.
+%   Returns a table with the first pca component
 
-%  load info about recognition phase and new HMAX estimates
-load([data_dir 'SpikeVar_learn_recog_info.mat']);
-load([hmax_dir 'HMAX_estims_allstims.mat']);
-
-% load task variant information
-vgg_info = readtable([vgg_dir 'SpikeVar_VGG16_Complexity.csv']);
+%% VGG16 feature pca
 % layer_names 
 layer_names = {'first', 'second', 'third', 'fourth', 'fifth'};
-
-%% VGG16 feature
 % get stimuli that have been used during encoding/recognition
-stim_used = get_stim_used(info, fulltable_learn, fulltable_recog);
-info(stim_used ==0,:) = [];
+stim_used = get_stim_used(stim_info, fulltable_learn, fulltable_recog);
+stim_info(stim_used == 0,:) = [];
 % get the stimulus indexes in the learned order for each participant
-stim_learn_idx = get_stim_learn_idx(info, fulltable_learn);
+stim_learn_idx = get_stim_learn_idx(stim_info, fulltable_learn);
 
 % initiate output tables
 pc1_table = table; pc1_table.participant = fulltable_learn.Participant;
@@ -35,7 +26,7 @@ for i = 1:length(stats)
     for j = 1:length(layer_names)
         layer = [layer_names{j}, '_layer'];
         % load layer-wise feature values
-        file_path = [vgg_dir, 'SpikeVar_VGG16_', layer_names{j}, '_mp-layer_features_', stats{i}, '.csv'];
+        file_path = [vgg_dir + 'SpikeVar_VGG16_' + layer_names{j} + '_mp-layer_features_' + stats{i} + '.csv'];
         layer_wise_features = load_vgg16_layer_features(file_path, stim_used);
         if j==1
             layer_wise_features(:,5) = []; % feature with zero variance
@@ -66,5 +57,8 @@ for i = 1:length(stats)
         end
     end
 end 
-save([vgg_dir 'VGG16_pca.mat'], 'pc1_table', 'pc_table', 'pc_avg_table', 'pca_table')
+save([vgg_dir + 'VGG16_pca.mat'], 'pc1_table', 'pc_table', 'pc_avg_table', 'pca_table')
+
+
+end
 

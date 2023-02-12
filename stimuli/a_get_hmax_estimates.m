@@ -1,14 +1,11 @@
-clc
-clear
-% path to HMAX functions
-addpath('/Users/kamp/PhD/spikevar/repo/SpikeVar/toolboxes/hmaxMatlab');
-% paths to stimuli
-% Use minimally renamed verion since it makes sorting things easier
-image_dir_base = "/Users/kamp/PhD/spikevar/stimuli_rn/";
-save_dir_base = "/Users/kamp/PhD/spikevar/repo/SpikeVar/output/hmax/";
-versions = ["newolddelay", "newolddelay2", "newolddelay3"];
+function HMAX_estimates = a_get_hmax_estimates(image_dir, hmax_dir)
+%a_get_hmax_estimates computes the hmax estimates for all input images
+%   Takes as input the directory containing the stimuli files and the hmax
+%   output directory. 
+%   Returns the sd, sum and median of the HMAX estimates for C1/C2 layer
 
-%% set up categroy names etc
+%% set up version, categroy names etc
+versions = ["newolddelay", "newolddelay2", "newolddelay3"];
 cat_dict = [{"houses", "landscapes", "mobility", "phones", "smallAnimal"},...
     {"fruit", "kids", "military", "space", "zzanimal"},...
     {"1cars", "2food","3people", "4spatial", "5animals"}];
@@ -32,17 +29,13 @@ nPatchSizes = size(patchSizes,2);
 %% loop across versions
 stim_codes = []; pic_paths = [];
 stim_versions = []; stim_categories = [];
-c1_mean = []; c2_mean = [];
 patch_wise_med_c1 = []; patch_wise_med_c2 = [];
 patch_wise_sd_c1 = []; patch_wise_sd_c2 = [];
 patch_wise_sum_c1 = []; patch_wise_sum_c2 = [];
-ori_wise_med_c1 = []; ori_wise_sd_c1 = [];
-ori_wise_med_c1_H = []; ori_wise_c1_H = [];
-img_H = [];
 fprintf('Starting HMAX\n')
 count = 0;
 for ver = 1:length(versions)
-    verdir = [image_dir_base + versions(ver) + '/'];
+    verdir = [image_dir + versions(ver) + '/'];
     % loop across categories
     for cat = 1:5
         catdir = [verdir + cat_dict(5*(ver-1)+cat) + '/'];
@@ -81,10 +74,7 @@ for ver = 1:length(versions)
             
             patch_wise_sum_c1 = [patch_wise_sum_c1; patch_estim.c1_sum];
             patch_wise_sum_c2 = [patch_wise_sum_c2; patch_estim.c2_sum];
-            
-            %c1_mean = [c1_mean; mean(patch_estim.c1_median)];
-            %c2_mean = [c2_mean; mean(cell2mat(patch_estim.c2_median))];
-            
+                      
             clear c1
             count = count + 1; 
             fprintf('\nFinished image %d. \n', count)
@@ -92,21 +82,23 @@ for ver = 1:length(versions)
     end
     
 end
-
+%% prepare info data
 % save info
 info = table(NaN(590,1), NaN(590,1), NaN(590,1), ... 
     'VariableNames', {'stimulus_code', 'version', 'category'});
 info.stimulus_code = stim_codes;
 info.version = stim_versions;
 info.category = stim_categories; 
-writetable(info, [save_dir_base + 'info.csv']) % as csv
-save([save_dir_base + 'info.mat'], 'info')
 
-% save all data
-save([save_dir_base + 'HMAX_estims_allstims.mat'], 'info',...
-    'patch_wise_med_c1', 'patch_wise_med_c2',...
-    'patch_wise_sd_c1', 'patch_wise_sd_c2',...
-    'patch_wise_sum_c1', 'patch_wise_sum_c2');
-
-
+%% save 
+HMAX_estimates = struct(...
+    patch_wise_med_c1 = patch_wise_med_c1, ...
+    patch_wise_med_c2 = patch_wise_med_c2, ...
+    patch_wise_sd_c1 = patch_wise_sd_c1, ... 
+    patch_wise_sd_c2 = patch_wise_sd_c2, ...
+    patch_wise_sum_c1 = patch_wise_sum_c1, ... 
+    patch_wise_sum_c2 = patch_wise_sum_c2);
+save([hmax_dir + 'HMAX_estimates.mat'], ... 
+    'info', 'HMAX_estimates');
+end
 

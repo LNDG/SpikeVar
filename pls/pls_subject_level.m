@@ -1,56 +1,49 @@
-clear
-clc
-
-% check if we are in the correct directory, change it if needed
-base_dir = '/Users/kamp/PhD/spikevar/repo/SpikeVar';
-stim_dir = fullfile(base_dir, 'stimuli/');
-pls_dir = fullfile(base_dir, 'pls/');
-hmax_dir = fullfile(base_dir, 'output', 'hmax/');
-vgg_dir = fullfile(base_dir, 'output', 'vgg16/');
-neuro_dir = fullfile(base_dir, 'output', 'neuro/');
-pls_output = fullfile(base_dir, 'output', 'pls/');
-cd(pls_dir)
-
-% add toolboxes
-addpath(genpath(fullfile(base_dir, 'toolboxes', 'pls_rank')));
-% VGG PCs
-load([vgg_dir, 'VGG16_pca.mat'], 'pc1_table');
-vgg_pc1_table = pc1_table;
-% HMAX PCs
-load([hmax_dir 'HMAX_pca.mat'], 'pc1_table');
-hmax_pc1_table = pc1_table;
-% spiking PE
-load([neuro_dir 'SpikeVar_spike_data_PE.mat'], 'spike_data_table');
-% get IDs
-pat_ids = unique(spike_data_table.Participant);
+function pls_results = pls_subject_level(spike_data_table, hmax_pc1_table, vgg_pc1_table, pls_dir, region)
+%pls_subject_level Function that loops over all subjects and performs 3 behavioral pls
+%   on for each subject.
+%   Takes as input the spike_data_table, and the first pca of hmax and vgg 
+%   outputs.
 
 %% loop across subjects
 count = 1; 
+% get IDs
+pat_ids = unique(spike_data_table.Participant);
+
 for pat_id = pat_ids'
-    % get relevant indices
-    % set of neurons (all, hippocampus <3  or amygdala >3)
-    % 1 = right Hippocampius, 2 = left Hippocampus
-    % 3 = right Amygdala, 4 = left Amygdala
     for i_ses = 1:2
-        % select neurons in hippocampus (brainArea < 3)
-        hpc_ids = find(spike_data_table.Participant==pat_id &...
-                       spike_data_table.brainArea < 3 & ... 
-                       spike_data_table.Session==i_ses);
+        % get relevant indices
+        % set of neurons (all, hippocampus <3  or amygdala =>3)
+        % 1 = right Hippocampius, 2 = left Hippocampus
+        % 3 = right Amygdala, 4 = left Amygdala
+        if region == "hippocampus"
+            % select neurons in hippocampus (brainArea < 3)
+            area_ids = find(spike_data_table.Participant==pat_id &...
+                           spike_data_table.brainArea < 3 & ... 
+                           spike_data_table.Session==i_ses);
+        elseif region == "amygdala"
+            % select neurons in amygdala (brainArea => 3)
+            area_ids = find(spike_data_table.Participant==pat_id &...
+                           spike_data_table.brainArea >= 3 & ... 
+                           spike_data_table.Session==i_ses)
+        else 
+            fprintf('Region has to hippocampus or amygdala')
+        end
+        
         % only continue if we have data
-        if isempty(hpc_ids)
+        if isempty(area_ids)
             continue
         end
-         
+     
         % get number of trials (varies between participants and sessions)
         n_trials_all = unique(spike_data_table.NumTrials(spike_data_table.Participant==pat_id &...
              spike_data_table.brainArea<3 &spike_data_table.Session==i_ses));
         % save neuron info
-        neuron_ids = unique(spike_data_table.NeuronCount(hpc_ids));
+        neuron_ids = unique(spike_data_table.NeuronCount(area_ids));
 
         % extract PE for different motif lengths
-        pe_dat_2 = spike_data_table.spike_permEn_2(hpc_ids);
-        pe_dat_3 = spike_data_table.spike_permEn_3(hpc_ids);
-        pe_dat_4 = spike_data_table.spike_permEn_4(hpc_ids);
+        pe_dat_2 = spike_data_table.spike_permEn_2(area_ids);
+        pe_dat_3 = spike_data_table.spike_permEn_3(area_ids);
+        pe_dat_4 = spike_data_table.spike_permEn_4(area_ids);
         
         % re-arrange data PE data
         n_neuron_all = length(neuron_ids);
@@ -92,15 +85,15 @@ for pat_id = pat_ids'
             % vgg sd 
             col_name = [layers{i} '_layer_nz_sd_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
-                hpc_ids, n_trials_all, n_neuron_all, drop_trials);        
+                area_ids, n_trials_all, n_neuron_all, drop_trials);        
             % vgg sum 
             col_name = [layers{i} '_layer_sum_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
-                hpc_ids, n_trials_all, n_neuron_all, drop_trials); 
+                area_ids, n_trials_all, n_neuron_all, drop_trials); 
             % vgg non-zero number 
             col_name = [layers{i} '_layer_nz_num_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(vgg_pc1_table(:, col_name), ... 
-                hpc_ids, n_trials_all, n_neuron_all, drop_trials);  
+                area_ids, n_trials_all, n_neuron_all, drop_trials);  
         end
         % prepare hmax data
         layers = {'c1', 'c2'};
@@ -108,11 +101,11 @@ for pat_id = pat_ids'
             % hmax sd 
             col_name = [layers{i} '_sd_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(hmax_pc1_table(:, col_name), ... 
-                hpc_ids, n_trials_all, n_neuron_all, drop_trials); 
+                area_ids, n_trials_all, n_neuron_all, drop_trials); 
             % hmax med
             col_name = [layers{i} '_sum_score'];
             stim_data.(col_name(1:end-6)) = prepare_pls_input(hmax_pc1_table(:, col_name), ... 
-                hpc_ids, n_trials_all, n_neuron_all, drop_trials);
+                area_ids, n_trials_all, n_neuron_all, drop_trials);
         end
            
         % run PLS models
@@ -185,9 +178,9 @@ for pat_id = pat_ids'
         behav_weights.late_layers{pat_id,i_ses} = result_late.v;
         behav_weights.early_layers{pat_id,i_ses} = result_early.v;
         
-        neuro_weights.all_layers{pat_id,ises} = result_combined{ises}.u;
-        neuro_weights.late_layers{pat_id,ises} = result_late{ises}.u;
-        neuro_weights.early_layers{pat_id,ises} = result_early{ises}.u;
+        neuro_weights.all_layers{pat_id,i_ses} = result_combined.u;
+        neuro_weights.late_layers{pat_id,i_ses} = result_late.u;
+        neuro_weights.early_layers{pat_id,i_ses} = result_early.u;
 
         % save number of trials
         trial_nums(pat_id, i_ses) = n_trails_used;
@@ -195,29 +188,38 @@ for pat_id = pat_ids'
         neuron_nums(pat_id, i_ses) = n_neuron_all;
 
         % save LVLV corrs
-        lvlv_corrs.all_layers{i_ses}(pat_id) = result_combined.lvlvcorr(1);
-        lvlv_corrs.late_layers{i_ses}(pat_id) = result_late.lvlvcorr(1);
-        lvlv_corrs.early_layers{i_ses}(pat_id) = result_early.lvlvcorr(1);
+        lvlv_corrs.all_layers{pat_id,i_ses} = result_combined.lvlvcorr(1);
+        lvlv_corrs.late_layers{pat_id,i_ses} = result_late.lvlvcorr(1);
+        lvlv_corrs.early_layers{pat_id,i_ses} = result_early.lvlvcorr(1);
 
         % also get bounds of LVLV corrs  
         % use the actual lvlv corr distribution
-        lvlv_corr_lims.all_layers{i_ses}(pat_id,:) = [percentile(squeeze(...
+        lvlv_corr_lims.all_layers{pat_id,i_ses} = [percentile(squeeze(...
             result_combined.boot_result.lvlvcorrdistrib(1,:)),1),...
             percentile(squeeze(...
             result_combined.boot_result.lvlvcorrdistrib(1,:)),99)];
-        lvlv_corr_lims.late_layers{i_ses}(pat_id,:) = [percentile(squeeze(...
+        lvlv_corr_lims.late_layers{pat_id,i_ses} = [percentile(squeeze(...
             result_late.boot_result.lvlvcorrdistrib(1,:)),1),...
             percentile(squeeze(...
             result_late.boot_result.lvlvcorrdistrib(1,:)),99)];
-        lvlv_corr_lims.early_layers{i_ses}(pat_id,:) = [percentile(squeeze(...
+        lvlv_corr_lims.early_layers{pat_id,i_ses} = [percentile(squeeze(...
             result_early.boot_result.lvlvcorrdistrib(1,:)),1),...
             percentile(squeeze(...
             result_early.boot_result.lvlvcorrdistrib(1,:)),99)];
     end
+    break
 end
 
+pls_results = struct(... 
+    behav_weights = behav_weights, ... 
+    neuro_weights = neuro_weights, ...
+    lvlv_corrs = lvlv_corrs, ... 
+    lvlv_corr_lims = lvlv_corr_lims, ...
+    trial_nums = trial_nums, ...
+    neuron_nums = neuron_nums)
+
 % save 
-save([pls_output 'SpikeVar_early_vs_late_PE_PLS_results.mat'], ...
-    'behav_weights', 'neuro_weights', ...
-    'lvlv_corrs','lvlv_corr_lims', ... 
-    'trial_nums', 'neuron_nums')
+save([pls_dir + 'SpikeVar_PLS_' + region + '_results.mat'], 'pls_results')
+
+end
+

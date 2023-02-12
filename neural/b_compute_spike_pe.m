@@ -1,19 +1,15 @@
-clear
-clc
-% check if we are in the correct directory, change it if needed
-base_dir = '/Users/kamp/PhD/spikevar';
-neuro_dir = fullfile(base_dir, 'repo', 'SpikeVar', 'neural/');
-data_dir = fullfile(base_dir,'output', 'neuro/');
-stim_dir = fullfile(base_dir,'stimuli_rn/');
-tool_dir = fullfile(base_dir, 'repo', 'SpikeVar', 'toolboxes');
+function spike_data_table = b_compute_spike_pe(spike_data_table, neuro_dir)
+%b_compute_spike_pe computes the permutation entropy of the spiking data
+%   Takes as input the data table with the binned spiking data and
+%   output directory
+%   Returns the spiking data with columns containing the permutation
+%   entropy of length 2,3 and 4.
+%   Saves output as SpikeVar_spike_data_PE.mat
 
-addpath(tool_dir);
-load([data_dir 'SpikeVar_spike_data.mat'], 'spike_data_table');
-%%
-% get subject indices 
+%% Calculate the spike permutation entropy for every patient, session, neuron and trial
+% subject indices 
+fprintf("Computing spike permutation entropy.\n")
 pat_ids = unique(spike_data_table.Participant);
-
-
 for participant_id = pat_ids'
     % get session indices
     ses_ids = unique(spike_data_table.Session(spike_data_table.Participant==participant_id));
@@ -50,4 +46,6 @@ for participant_id = pat_ids'
     disp(['Done with participant ' num2str(participant_id)])
 end
 %% save table inlcuding single trial PE
-save([data_dir 'SpikeVar_spike_data_PE.mat'], 'spike_data_table')
+save([neuro_dir + 'SpikeVar_spike_data_PE.mat'], 'spike_data_table')
+end
+
