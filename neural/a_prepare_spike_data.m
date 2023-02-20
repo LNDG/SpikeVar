@@ -149,7 +149,7 @@ spike_data=spike_data(~drop_me);
 %% save data
 % convert spike data into table
 spike_data_table = construct_table(spike_data);
-save([neuro_dir 'SpikeVar_spike_data.mat'], 'spike_data', 'spike_data_table');
+save([neuro_dir + 'SpikeVar_spike_data.mat'], 'spike_data', 'spike_data_table');
 
 end
 
