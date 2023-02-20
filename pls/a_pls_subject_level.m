@@ -40,7 +40,7 @@ for pat_id = pat_ids'
      
         % get number of trials (varies between participants and sessions)
         n_trials_all = unique(spike_data_table.NumTrials(spike_data_table.Participant==pat_id &...
-             spike_data_table.brainArea<3 &spike_data_table.Session==i_ses));
+             spike_data_table.brainArea<3 & spike_data_table.Session==i_ses));
         % save neuron info
         neuron_ids = unique(spike_data_table.NeuronCount(area_ids));
         n_neuron_all = length(neuron_ids);
