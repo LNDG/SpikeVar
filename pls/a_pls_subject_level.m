@@ -28,7 +28,7 @@ for pat_id = pat_ids'
             % select neurons in amygdala (brainArea => 3)
             area_ids = find(spike_data_table.Participant==pat_id &...
                            spike_data_table.brainArea >= 3 & ... 
-                           spike_data_table.Session==i_ses)
+                           spike_data_table.Session==i_ses);
         else 
             fprintf('Region has to hippocampus or amygdala')
         end

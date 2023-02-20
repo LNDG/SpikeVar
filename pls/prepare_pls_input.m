@@ -4,7 +4,8 @@ function pca_table = prepare_pls_input(pca_table, area_ids, num_trials, n_neuron
     pca_table = pca_table(area_ids, :);
     pca_table = table2array(pca_table);
     pca_table = reshape(pca_table, num_trials,...
-        n_neurons);
-    pca_table = squeeze(pca_table(:,1));
-    pca_table(drop_trials,:) = [];  
+        n_neurons, size(pca_table,2));
+    pca_table = squeeze(pca_table(:,1,:));
+    pca_table(drop_trials,:) = []; 
+    pca_table = pca_table(:,1);
 end

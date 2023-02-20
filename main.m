@@ -64,7 +64,7 @@ hmax_pc1_table = b_hmax_pca(HMAX_estimates, stim_info, fulltable_learn, fulltabl
 
 % 2.4. Run pca on VGG16 estimates
 fprintf("Running PCA on VGG16 feature estimates.\n")
-vgg_dir_or = fullfile(base_dir , "stimuli", "old_version", "original_results_renamed/");
+vgg_dir_or = fullfile(vgg_dir , "original_results_renamed/");
 vgg_pc1_table = d_vgg16_pca(vgg_dir_or, stim_info, fulltable_learn, fulltable_recog);
 
 
