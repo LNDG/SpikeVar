@@ -171,11 +171,15 @@ pls_results = struct(...
     stim_weights = stim_weights, ... 
     neuro_weights = neuro_weights, ...
     lvlv_corrs = lvlv_corrs, ... 
-    lvlv_corr_lims = lvlv_corr_lims)
+    lvlv_corr_lims = lvlv_corr_lims); 
+
+pls_results.trial_nums = trial_nums; 
+pls_results.neuron_nums = neuron_nums;
+pls_results.all_neuron_ids = all_neuron_ids;
 
 % save 
 save([pls_dir + 'SpikeVar_' + measure + '_PLS_' + region + '_results.mat'], ... 
-    'pls_results', 'trial_nums', 'neuron_nums', 'all_neuron_ids')
+    'pls_results')
 
 end
 

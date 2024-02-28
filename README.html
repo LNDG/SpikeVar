@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>SpikeVar</title>
+        <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+        
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+        
+    </head>
+    <body class="vscode-body vscode-light">
+        <h1 id="spikevar">SpikeVar</h1>
+<p>In this repository you can find code that reproduces all main results of the <em>spikevar</em> project.
+<strong>Note</strong>: This repo will still be updated during revisions and currently is only intended for to allow reviewers to take a look at any part of our analysis pipeline.</p>
+<p><img src="file:////Users/kamp/PhD/spikevar/repo/SpikeVar/figures/Fig1_draft.png" alt="Fig 1."></p>
+<h1 id="summary">Summary</h1>
+<p>The <em>spikevar</em> project investigates the neural representations of stimuli &quot;content&quot; in the hippocampus during memory encoding. Using computational modelling and human single-cell recordings, we show that individuals who are able to up/downregulate the hippocampal spiking variability in correspondence to the trial-wise stimuli features, also remember the presented stimuli better.</p>
+<p>The project is segmented in four main parts. First, we estimate the feature content of the presented stimuli using two neural network approaches (HMAX and VGG16). Second, the spiking variability of the single cell recordings are computed. We use permutation entropy as measure of spiking variability. Third, we use partial least squares (PLS) to find the maximal latent correlation between trial-wise hippocampal spiking variability and feature content across early/late/all layers in the neural network. Finally, we model the behavioral data using a GLM approach to estimate relation between the regulation of hippocampal spiking variability and memory performance during recall.</p>
+<h1 id="code-structure">Code structure</h1>
+<p>As mentioned above, there are four main parts to the <em>spikevar</em> project. The corresponding code to each of these parts can be found in the subfolders
+1. stimuli
+2. neuro
+3. pls
+4. behav</p>
+<p>The script <strong>main.m</strong> runs the complete analysis pipeline and reproduces the main results from the paper.</p>
+
+        
+        
+    </body>
+    </html>
