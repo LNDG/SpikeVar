@@ -1,7 +1,7 @@
 clc
 clear
 % path to HMAX functions
-base_dir = "/Users/kamp/PhD/spikevar/repo/SpikeVar_onedrive/";
+base_dir = "XXXX"; % enter the directory of the repository here
 cd(base_dir)
 % add subfolders
 addpath(genpath(base_dir));

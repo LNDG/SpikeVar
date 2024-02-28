@@ -23,8 +23,12 @@ The script **main.m** runs the complete analysis pipeline and reproduces the mai
 
 # System requirements
 - The analysis was done using *Matlab2020a* and *python3*.
+
+# Toolboxes
 - Stimuli feature contents were computed using *[HMAX](https://github.com/joshrule/hmax)* and the *[VGG16](https://www.tensorflow.org/api_docs/python/tf/keras/applications/vgg16/VGG16)* implementation in tensorflow (v2.4.1). 
 - To estimate the spike permutation entropy we used the *[EntropyHub](https://www.entropyhub.xyz/index.html)* package. 
+- To estimate the PLS we used [PLSrank](https://github.com/LNDG/PLS_rank)
+- For plotting we used [RainCloudPlots](https://github.com/RainCloudPlots/RainCloudPlots) and cbrewer
 
 # References
 [1] *M. Riesenhuber, T. Poggio, Hierarchical models of object recognition in cortex. Nat Neurosci. 2, 1019–1025 (1999).*
