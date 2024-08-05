@@ -11,15 +11,19 @@ The *SpikeVar* project investigates the neural representation of stimuli "conten
 
 The project consists of four main parts. First, we estimate the feature content of the presented stimuli using a neural network approach employing HMAX [1] and VGG16 [2] (Fig. 1b). Second, the spiking variability of the single cell recordings are computed. We employ permutation entropy [3] as measure of spiking variability (Fig. 1c). Third, we use partial least squares analysis (PLS) [4] to find the latent coupling between trial-wise hippocampal spiking variability and feature content across early/late/all layers in the neural network (Fig. 1d, left). Finally, we model the behavioral recognition data using a GLM approach to estimate relation between the regulation of hippocampal spiking variability and memory performance during recall (Fig. 1d, right). 
 
+All reported p-values were estimated using non-parametrical permutation tests. 
+
 # Code structure
 As mentioned above, there are four main parts to the *spikevar* project. The corresponding code to each of these parts can be found in the following subfolders 
 
     1. stimuli 
     2. neuro 
     3. pls
-    4. behav 
+    4. behav
+    5. perm
 
 The script **main.m** runs the complete analysis pipeline and reproduces the main results from the paper. 
+Permutation tests are computed separately by scripts in folder perm, as this takes more time.
 
 # System requirements
 - The analysis was done using *Matlab2020a* and *python3*.
