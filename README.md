@@ -1,8 +1,6 @@
 # SpikeVar
 In this repository you can find code that reproduces all main results of the *spikevar* project.
 
-> **Note**: This repository will still be updated during revisions and currently is only intended for to allow reviewers to take a look at any part of our analysis pipeline. 
-
 ![Fig. 1](figures/Fig1_draft.png)
 *Fig. 1: Estimating latentent coupling between image features and hippocampal spike entropy*
 
