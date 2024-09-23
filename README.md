@@ -1,6 +1,6 @@
 # SpikeVar
 
-![alt text](zenodo.png)
+[![DOI](https://zenodo.org/badge/578928852.svg)](https://zenodo.org/doi/10.5281/zenodo.13827811)
 
 In this repository you can find code that reproduces all main results of the *spikevar* project.
 
