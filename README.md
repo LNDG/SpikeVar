@@ -1,4 +1,7 @@
 # SpikeVar
+
+![alt text](zenodo.png)
+
 In this repository you can find code that reproduces all main results of the *spikevar* project.
 
 ![Fig. 1](figures/Fig1_draft.png)
